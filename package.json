@@ -24,7 +24,9 @@
     "bootstrap": "^5.3.3",
     "chart.js": "^4.4.8",
     "crypto-js": "^4.2.0",
+    "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
+    "electron-is-dev": "^2.0.0",
     "react": "^18.3.1",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "^18.3.1",
@@ -33,8 +35,7 @@
     "react-to-print": "^3.0.1",
     "sweetalert2": "^11.14.3",
     "web-vitals": "^2.1.4",
-    "zustand": "^5.0.3",
-    "electron-is-dev": "^2.0.0"
+    "zustand": "^5.0.3"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -51,11 +52,22 @@
     "dist": "npm run build-electron"
   },
   "eslintConfig": {
-    "extends": ["react-app", "react-app/jest"]
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
   },
   "browserslist": {
-    "production": [">0.2%", "not dead", "not op_mini all"],
-    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
@@ -73,7 +85,7 @@
       "output": "dist"
     },
     "extraMetadata": {
-      "main": "electron-main.js"       
+      "main": "electron-main.js"
     },
     "files": [
       "build/**/*",
@@ -86,11 +98,15 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "public/restaurant.ico"
@@ -100,7 +116,10 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "icon": "public/restaurant.icns"
@@ -109,11 +128,15 @@
       "target": [
         {
           "target": "AppImage",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "deb",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "public/restaurant.png"
