@@ -1,0 +1,126 @@
+{
+  "name": "restaurant",
+  "version": "0.1.0",
+  "description": "Restaurant Management Desktop Application",
+  "author": {
+    "name": "AJXT",
+    "email": "edwinadjei381@gmail.com"
+  },
+  "main": "electron-main.js",
+  "private": true,
+  "homepage": ".",
+  "dependencies": {
+    "@emotion/react": "^11.13.3",
+    "@emotion/styled": "^11.13.0",
+    "@mui/icons-material": "^6.1.2",
+    "@mui/material": "^6.1.2",
+    "@mui/x-charts": "^7.25.0",
+    "@mui/x-data-grid": "^7.27.3",
+    "@mui/x-date-pickers": "^7.20.0",
+    "@supabase/supabase-js": "^2.45.4",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "bootstrap": "^5.3.3",
+    "chart.js": "^4.4.8",
+    "crypto-js": "^4.2.0",
+    "dayjs": "^1.11.13",
+    "react": "^18.3.1",
+    "react-chartjs-2": "^5.3.0",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2",
+    "react-scripts": "5.0.1",
+    "react-to-print": "^3.0.1",
+    "sweetalert2": "^11.14.3",
+    "web-vitals": "^2.1.4",
+    "zustand": "^5.0.3",
+    "electron-is-dev": "^2.0.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "electron": "electron .",
+    "electron-dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-build": "npm run build && npm run copy-electron && electron .",
+    "copy-electron": "node scripts/copy-electron.js",
+    "build-electron": "npm run build && npm run copy-electron && electron-builder",
+    "build-electron-win": "npm run build && npm run copy-electron && electron-builder --win",
+    "build-electron-all": "npm run build && npm run copy-electron && electron-builder --mac --win --linux",
+    "dist": "npm run build-electron"
+  },
+  "eslintConfig": {
+    "extends": ["react-app", "react-app/jest"]
+  },
+  "browserslist": {
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@types/electron": "^1.4.38",
+    "concurrently": "^9.2.0",
+    "electron": "^32.3.3",
+    "electron-builder": "^26.0.12",
+    "wait-on": "^8.0.3"
+  },
+  "build": {
+    "appId": "com.restaurant.app",
+    "productName": "Restaurant App",
+    "copyright": "Copyright © 2025 AJXT. All rights reserved.",
+    "directories": {
+      "output": "dist"
+    },
+    "extraMetadata": {
+      "main": "electron-main.js"       
+    },
+    "files": [
+      "build/**/*",
+      "electron-main.js",
+      "public/icon.ico",
+      "node_modules/**/*",
+      "!node_modules/.cache/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "public/restaurant.ico"
+    },
+    "mac": {
+      "category": "public.app-category.business",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "public/restaurant.icns"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "public/restaurant.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

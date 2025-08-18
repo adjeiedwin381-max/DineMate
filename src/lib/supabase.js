@@ -1,0 +1,6 @@
+import { createClient } from '@supabase/supabase-js';
+
+const PROJECT_URI = 'https://jzgrowofybjstbasfcpq.supabase.co'
+const PROJECT_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6Z3Jvd29meWJqc3RiYXNmY3BxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjg0ODYxNjcsImV4cCI6MjA0NDA2MjE2N30.VAbfV_ChT5carGQWro2eCyx5H1Dj8HXb1H-7jIQ7DcE'
+
+export const supabase = createClient(PROJECT_URI, PROJECT_ANON);
