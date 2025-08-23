@@ -1,831 +1,337 @@
-import React, { useState, useRef } from 'react';
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Container,
-  TextField,
-  Typography,
-  Link,
-  Stepper,
-  Step,
-  StepLabel,
-  InputAdornment,
-  IconButton,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormControlLabel,
-  Switch,
-  Chip,
-  Stack,
-  CardActions,
-  Grid,
-  Divider
-} from '@mui/material';
-import {
-  Visibility,
-  VisibilityOff,
-  Email,
-  Lock,
-  Person,
-  Phone,
-  ArrowBack,
-  ArrowForward,
-  Check,
-} from '@mui/icons-material';
-import StorefrontIcon from '@mui/icons-material/Storefront';
-import PlaceIcon from '@mui/icons-material/Place';
-import StoreIcon from '@mui/icons-material/Store';
-import { CheckCircle } from '@mui/icons-material';
-import UploadFileIcon from "@mui/icons-material/UploadFile";
-import { useNavigate } from 'react-router-dom';
+import * as React from 'react';
+import { useState, Fragment } from "react";
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CssBaseline from '@mui/material/CssBaseline';
+import Grid from '@mui/material/Grid';
+import Stack from '@mui/material/Stack';
+import Step from '@mui/material/Step';
+import StepLabel from '@mui/material/StepLabel';
+import Stepper from '@mui/material/Stepper';
+import Typography from '@mui/material/Typography';
+import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
+import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
+import Info from './components/Info';
+import InfoMobile from './components/InfoMobile';
+import SitemarkIcon from './components/SitemarkIcon';
+import AppTheme from "./components/shared-theme/AppTheme";
+import ColorModeIconDropdown from './components/shared-theme/ColorModeIconDropdwon';
+import useAuthStore from '../../lib/authStore';
+import Swal from 'sweetalert2';
 
-const plans = [
-  {
-    title: 'Free',
-    price: '$0',
-    features: ['1 User', 'Basic Features', 'Community Support'],
-    buttonText: 'Get Started',
-    highlighted: false,
-  },
-  {
-    title: 'Pro',
-    price: '$19',
-    features: ['Up to 5 Users', 'Advanced Features', 'Priority Support'],
-    buttonText: 'Upgrade',
-    highlighted: true,
-  },
-  {
-    title: 'Enterprise',
-    price: 'Contact Us',
-    features: ['Unlimited Users', 'All Features', 'Dedicated Support'],
-    buttonText: 'Contact Sales',
-    highlighted: false,
-  },
-];
+export default function Checkout(props) {
+  const {
+    steps,
+    getStepContent,
+    activeStep,
+    handleBack,
+    handleNextWithValidation,
+    personalInfo,
+    restaurantInfo,
+    subscription,
+    consent,
+    insertRestaurant,
+    signUp,
+    setProcessing,
+    processing,
+  } = useAuthStore();
 
-const steps = ['Account Info', 'Restaurant Details', 'Billing & Subscription', 'Confirmation'];
+  const onNext = () => {
+    const result = handleNextWithValidation();
+    if (!result.success) {
+      // Show errors in UI
+      console.log(result.errors);
 
-const idTypes = ['Passport', 'Driver\'s License', 'National ID'];
-
-const countries = ['United States', 'Canada', 'United Kingdom', 'Germany', 'France', 'Australia', 'Japan', 'Other'];
-
-const availableInterests = ['Technology', 'Design', 'Business', 'Marketing', 'Finance', 'Health', 'Travel', 'Food', 'Sports', 'Music'];
-
-export default function SignUp({ onSwitchToSignIn }) {
-  const [activeStep, setActiveStep] = useState(0);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
-  const fileInputRef = useRef(null);
-  const [fileName, setFileName] = useState("");
-  const navigate = useNavigate();
-
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    firstName: '',
-    lastName: '',
-    idType: '',
-    idNumber: '',
-    phoneNumber: '',
-    restaurantName: '',
-    restaurantAddress: '',
-    restaurantPhone: '',
-    restaurantType: '',
-    country: '',
-    notifications: {
-      email: true,
-      sms: false,
-      marketing: false,
-    },
-    interests: [],
-  });
-
-  const handleChange = (field) => (event) => {
-    const value = event.target.value;
-    
-    if (field.includes('.')) {
-      const [parent, child] = field.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...(prev)[parent],
-          [child]: event.target.type === 'checkbox' ? event.target.checked : value
-        }
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value
-      }));
+      return;
     }
-    
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: ''
-      }));
+
+    // If this is the last step → log everything
+    if (activeStep === steps.length - 1) {
+      console.log("🚀 Final submission payload:", {
+        personalInfo,
+        restaurantInfo,
+        subscription,
+        consent,
+      });
+
+      onSubmit();
     }
   };
 
-  const handleButtonClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
+  const onSubmit = async () => {
+    setProcessing(true);
+    try {
+      // Call your Supabase Edge Function instead of direct supabase.auth.signUp
+      const res = await fetch(
+        `https://bvgukcijhcmsfhzywros.supabase.co/functions/v1/signup`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            // You don’t need an auth token here, since the function handles signup
+            apikey:
+              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2Z3VrY2lqaGNtc2Zoenl3cm9zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzNDE1NDksImV4cCI6MjA3MDkxNzU0OX0.EP068h4rdMhq_EgMrLbN50VXN6K_TEAQTfdiLJNNj70",
+            Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2Z3VrY2lqaGNtc2Zoenl3cm9zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzNDE1NDksImV4cCI6MjA3MDkxNzU0OX0.EP068h4rdMhq_EgMrLbN50VXN6K_TEAQTfdiLJNNj70",
+          },
+          body: JSON.stringify({
+            personalInfo,
+            restaurantInfo,
+            subscription,
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Signup failed");
+      }
+
+      // ✅ Signup + restaurant creation was successful
+      Swal.fire({
+        title: "Success",
+        text: "Account created! Please check your email to confirm.",
+        icon: "success",
+      });
+    } catch (error) {
+      Swal.fire({ title: "Error", text: error.message, icon: "error" });
+    } finally {
+      setProcessing(false);
     }
   };
 
-    const handleFileSelect = (file) => {
-    if (file) {
-      console.log("Selected file:", file.name);
-    }
-  };
-
-  const handleFileChange = (event) => {
-    const file = event.target.files?.[0] || null;
-    setFileName(file ? file.name : "");
-    if (handleFileSelect) {
-      handleFileSelect(file);
-    }
-  };
-
-  const handleInterestToggle = (interest) => {
-    setFormData(prev => ({
-      ...prev,
-      interests: prev.interests.includes(interest)
-        ? prev.interests.filter(i => i !== interest)
-        : [...prev.interests, interest]
-    }));
-  };
-
-  const validateStep = (step) => {
-    const newErrors = {};
-
-    switch (step) {
-    case 0:
-        if (!formData.email) {
-        newErrors.email = 'Email is required';
-        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-        newErrors.email = 'Please enter a valid email address';
-        }
-
-        if (!formData.password) {
-        newErrors.password = 'Password is required';
-        } else if (formData.password.length < 6) {
-        newErrors.password = 'Password must be at least 6 characters';
-        }
-
-        if (!formData.confirmPassword) {
-        newErrors.confirmPassword = 'Please confirm your password';
-        } else if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = 'Passwords do not match';
-        }
-        if (!formData.firstName) {
-        newErrors.firstName = 'First name is required';
-        }
-        if (!formData.lastName) {
-        newErrors.lastName = 'Last name is required';
-        }
-        if (!formData.phoneNumber) {
-        newErrors.phoneNumber = 'Phone number is required';
-        }
-        if (!formData.idType) {
-        newErrors.idType = 'ID type is required';
-        }
-        if (!formData.idNumber) {
-        newErrors.idNumber = 'ID number is required';
-        }
-        break;
-
-    case 1:
-        if (!formData.firstName) {
-        newErrors.firstName = 'First name is required';
-        }
-        if (!formData.lastName) {
-        newErrors.lastName = 'Last name is required';
-        }
-        if (!formData.phoneNumber) {
-        newErrors.phoneNumber = 'Phone number is required';
-        }
-        break;
-
-    case 2:
-        // Optional step, no required fields
-        break;
-
-    default:
-        // No validation needed for unknown steps
-        break;
-    }
-
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleNext = () => {
-    if (validateStep(activeStep)) {
-      setActiveStep(prev => prev + 1);
-    }
-  };
-
-  const handleBack = () => {
-    setActiveStep(prev => prev - 1);
-  };
-
-  const handleSubmit = async () => {
-    if (!validateStep(activeStep)) return;
-
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      alert('Account created successfully! (This is just a demo)');
-    }, 1500);
-  };
-
-  const renderStepContent = (step) => {
-    switch (step) {
-      case 0:
-        return (
-          <Box>
-            <Typography variant="h6" gutterBottom fontWeight="medium">
-              Create Your Account
-            </Typography>
-            <Typography variant="subtitle1" color="text.secondary" mb={3}>
-              Enter your basic user information to get started
-            </Typography>
-
-            <Typography variant="body2" color="text.secondary" mb={3}>
-              Personal Information
-            </Typography>
-
-            <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-              <TextField
-                required
-                fullWidth
-                id="firstName"
-                label="First Name"
-                name="firstName"
-                autoComplete="given-name"
-                value={formData.firstName}
-                onChange={handleChange('firstName')}
-                error={!!errors.firstName}
-                helperText={errors.firstName}
-              />
-
-              <TextField
-                required
-                fullWidth
-                id="lastName"
-                label="Last Name"
-                name="lastName"
-                autoComplete="family-name"
-                value={formData.lastName}
-                onChange={handleChange('lastName')}
-                error={!!errors.lastName}
-                helperText={errors.lastName}
-              />
-            </Box>
-
-            <TextField
-              required
-              fullWidth
-              id="phoneNumber"
-              label="Phone Number"
-              name="phoneNumber"
-              autoComplete="tel"
-              value={formData.phoneNumber}
-              onChange={handleChange('phoneNumber')}
-              error={!!errors.phoneNumber}
-              helperText={errors.phoneNumber}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Phone color="action" />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mb: 3 }}
-            />
-            
-
-            <TextField
-              required
-              fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
-              autoComplete="email"
-              value={formData.email}
-              onChange={handleChange('email')}
-              error={!!errors.email}
-              helperText={errors.email}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Email color="action" />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mb: 3 }}
-            />
-            <Typography variant="body2" color="text.secondary" mb={3}>
-              Identification & Verification
-            </Typography>
-
-            <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-                <FormControl 
-                    fullWidth 
-                    required
-                    error={!!errors.idType}
-                    helperText={errors.idType}
-                >
-                    <InputLabel id="country-label">ID Type</InputLabel>
-                    <Select
-                        labelId="country-label"
-                        id="country"
-                        value={formData.idType}
-                        label="Country"
-                        onChange={(e) => setFormData(prev => ({ ...prev, idType: e.target.value }))}
-                    >
-                        {idTypes.map((idType) => (
-                        <MenuItem key={idType} value={idType}>
-                            {idType}
-                        </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
-
-                <TextField
-                    required
-                    fullWidth
-                    id="idNumber"
-                    label="ID Number"
-                    name="idNumber"
-                    autoComplete="id-number"
-                    value={formData.idNumber}
-                    onChange={handleChange('idNumber')}
-                    error={!!errors.idNumber}
-                    helperText={errors.idNumber}
-                />
-            </Box>
-
-            <Typography variant="body2" color="text.secondary" mb={3}>
-              Security
-            </Typography>
-
-            <TextField
-              required
-              fullWidth
-              name="password"
-              label="Password"
-              type={showPassword ? 'text' : 'password'}
-              id="password"
-              autoComplete="new-password"
-              value={formData.password}
-              onChange={handleChange('password')}
-              error={!!errors.password}
-              helperText={errors.password}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Lock color="action" />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={() => setShowPassword(!showPassword)}
-                      edge="end"
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mb: 3 }}
-            />
-
-            <TextField
-              required
-              fullWidth
-              name="confirmPassword"
-              label="Confirm Password"
-              type={showConfirmPassword ? 'text' : 'password'}
-              id="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange('confirmPassword')}
-              error={!!errors.confirmPassword}
-              helperText={errors.confirmPassword}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Lock color="action" />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      edge="end"
-                    >
-                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Box>
-        );
-
-      case 1:
-        return (
-          <Box>
-            <Typography variant="h6" gutterBottom fontWeight="medium">
-              Restaurant Information
-            </Typography>
-            <Typography variant="body2" color="text.secondary" mb={3}>
-              Tell us a bit about your restaurant
-            </Typography>
-
-            {/* <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-              <TextField
-                required
-                fullWidth
-                id="firstName"
-                label="First Name"
-                name="firstName"
-                autoComplete="given-name"
-                value={formData.firstName}
-                onChange={handleChange('firstName')}
-                error={!!errors.firstName}
-                helperText={errors.firstName}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Person color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              <TextField
-                required
-                fullWidth
-                id="lastName"
-                label="Last Name"
-                name="lastName"
-                autoComplete="family-name"
-                value={formData.lastName}
-                onChange={handleChange('lastName')}
-                error={!!errors.lastName}
-                helperText={errors.lastName}
-              />
-            </Box> */}
-
-            <TextField
-              required
-              fullWidth
-              id="restaurantName"
-              label="Name"
-              name="restaurantName"
-              autoComplete="restaurant-name"
-              value={formData.restaurantName}
-              onChange={handleChange('restaurantName')}
-              error={!!errors.restaurantName}
-              helperText={errors.restaurantName}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <StorefrontIcon color="action" />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mb: 3 }}
-            />
-
-            <TextField
-              required
-              fullWidth
-              id="restaurantAddress"
-              label="Address"
-              name="restaurantAddress"
-              autoComplete="restaurant-address"
-              value={formData.restaurantAddress}
-              onChange={handleChange('restaurantAddress')}
-              error={!!errors.restaurantAddress}
-              helperText={errors.restaurantAddress}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PlaceIcon color="action" />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mb: 3 }}
-            />
-
-            <FormControl fullWidth sx={{ mb: 3 }}>
-            <InputLabel id="country-label">Country</InputLabel>
-            <Select
-                labelId="country-label"
-                id="country"
-                value={formData.country}
-                label="Country"
-                onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
-            >
-                {countries.map((country) => (
-                <MenuItem key={country} value={country}>
-                    {country}
-                </MenuItem>
-                ))}
-            </Select>
-            </FormControl>
-
-            <TextField
-              required
-              fullWidth
-              id="phoneNumber"
-              label="Phone Number"
-              name="phoneNumber"
-              autoComplete="tel"
-              value={formData.phoneNumber}
-              onChange={handleChange('phoneNumber')}
-              error={!!errors.phoneNumber}
-              helperText={errors.phoneNumber}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Phone color="action" />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mb: 3 }}
-            />
-
-            <TextField
-              fullWidth
-              id="restaurantType"
-              label="Type - e.g. bar, café, fast food"
-              name="restaurantType"
-              autoComplete="restaurant-type"
-              value={formData.restaurantType}
-              onChange={handleChange('restaurantType')}
-              error={!!errors.restaurantType}
-              helperText={errors.restaurantType}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <StoreIcon color="action" />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mb: 3 }}
-            />
-
-            <Box display="flex" alignItems="center" gap={2}>
-                <TextField
-                    label="Upload Restaurant Certificate"
-                    value={fileName}
-                    fullWidth
-                    InputProps={{
-                    readOnly: true,
-                    }}
-                />
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    style={{ display: "none" }}
-                    onChange={handleFileChange}
-                />
-                <Button
-                    size='large'
-                    variant="contained"
-                    startIcon={<UploadFileIcon />}
-                    onClick={handleButtonClick}
-                >
-                    Browse
-                </Button>
-            </Box>
-          </Box>
-        );
-
-      case 2:
-        return (
-        <Container maxWidth="lg" sx={{ py: 6 }}>
-            <Box textAlign="center" mb={6}>
-                <Typography variant="h4" fontWeight={700} gutterBottom>
-                Choose Your Plan
-                </Typography>
-                <Typography variant="subtitle1" color="text.secondary">
-                Select a subscription that fits your restaurant management needs.
-                </Typography>
-            </Box>
-
-            <Grid container spacing={4}>
-                {plans.map((plan) => (
-                <Grid item xs={12} sm={6} md={4} key={plan.title}>
-                    <Card
-                    sx={{
-                        borderRadius: 3,
-                        boxShadow: plan.highlighted
-                        ? '0 8px 24px rgba(0,0,0,0.15)'
-                        : '0 4px 12px rgba(0,0,0,0.08)',
-                        border: plan.highlighted ? '2px solid #1976d2' : '1px solid #e0e0e0',
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                    }}
-                    >
-                    <CardContent sx={{ flexGrow: 1 }}>
-                        <Typography variant="h6" fontWeight={600} gutterBottom>
-                        {plan.title}
-                        </Typography>
-                        <Typography variant="h4" color="primary" gutterBottom>
-                        {plan.price}
-                        {plan.price !== 'Contact Us' && (
-                            <Typography
-                            component="span"
-                            variant="subtitle1"
-                            color="text.secondary"
-                            >
-                            /mo
-                            </Typography>
-                        )}
-                        </Typography>
-
-                        <Divider sx={{ my: 2 }} />
-
-                        {plan.features.map((feature) => (
-                        <Box
-                            key={feature}
-                            display="flex"
-                            alignItems="center"
-                            mb={1}
-                        >
-                            <CheckCircle
-                            color="success"
-                            fontSize="small"
-                            sx={{ mr: 1 }}
-                            />
-                            <Typography variant="body2">{feature}</Typography>
-                        </Box>
-                        ))}
-                    </CardContent>
-                    <CardActions sx={{ justifyContent: 'center', pb: 3 }}>
-                        <Button
-                        variant={plan.highlighted ? 'contained' : 'outlined'}
-                        color="primary"
-                        fullWidth
-                        sx={{ borderRadius: 2 }}
-                        >
-                        {plan.buttonText}
-                        </Button>
-                    </CardActions>
-                    </Card>
-                </Grid>
-                ))}
-            </Grid>
-        </Container>
-        );
-
-      default:
-        return null;
-    }
-  };
 
   return (
-    <Container component="main" maxWidth="md">
-      <Box
+    <AppTheme {...props}>
+      <CssBaseline enableColorScheme />
+      <Box sx={{ position: "fixed", top: "1rem", right: "1rem" }}>
+        <ColorModeIconDropdown />
+      </Box>
+
+      <Grid
+        container
         sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          py: 4,
+          height: {
+            xs: "100%",
+            sm: "calc(100dvh - var(--template-frame-  height, 0px))",
+          },
+          mt: {
+            xs: 4,
+            sm: 0,
+          },
         }}
       >
-        <Card
-          elevation={3}
+        <Grid
+          xs={12}
+          sm={5}
+          lg={4}
           sx={{
-            borderRadius: 3,
-            overflow: 'visible',
-            position: 'relative',
+            display: { xs: "none", md: "flex" },
+            flexDirection: "column",
+            backgroundColor: "background.paper",
+            borderRight: { sm: "none", md: "1px solid" },
+            borderColor: { sm: "none", md: "divider" },
+            alignItems: "start",
+            pt: 16,
+            px: 10,
+            gap: 4,
           }}
         >
-          <CardContent sx={{ p: 4 }}>
-            <Box textAlign="center" mb={4}>
-              <Typography
-                component="h1"
-                variant="h4"
-                fontWeight="bold"
-                color="primary"
-                gutterBottom
+          <SitemarkIcon />
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              flexGrow: 1,
+              height: "100%",
+              width: "100%",
+              maxWidth: 600,
+            }}
+          >
+            <Info totalPrice={activeStep >= 2 ? "$144.97" : "$134.98"} />
+          </Box>
+        </Grid>
+        <Grid
+          xs={12}
+          sm={7}
+          lg={8}
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            maxWidth: "100%",
+            width: "100%",
+            backgroundColor: { xs: "transparent", sm: "background.default" },
+            alignItems: "start",
+            pt: { xs: 0, sm: 16 },
+            px: { xs: 2, sm: 10 },
+            gap: { xs: 4, md: 3 },
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: { sm: "space-between", md: "flex-end" },
+              alignItems: "center",
+              width: "100%",
+              maxWidth: { sm: "100%", md: "10``0%" },
+            }}
+          >
+            <Box
+              sx={{
+                display: { xs: "none", md: "flex" },
+                flexDirection: "column",
+                justifyContent: "space-between",
+                alignItems: "flex-end",
+                flexGrow: 1,
+              }}
+            >
+              <Stepper
+                id="desktop-stepper"
+                activeStep={activeStep}
+                sx={{ width: "100%", height: 40 }}
               >
-                Create Account
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Join us today and get started in just a few steps
-              </Typography>
+                {steps.map((label) => (
+                  <Step
+                    sx={{ ":first-child": { pl: 0 }, ":last-child": { pr: 0 } }}
+                    key={label}
+                  >
+                    <StepLabel>{label}</StepLabel>
+                  </Step>
+                ))}
+              </Stepper>
             </Box>
-
-            <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+          </Box>
+          <Card sx={{ display: { xs: "flex", md: "none" }, width: "100%" }}>
+            <CardContent
+              sx={{
+                display: "flex",
+                width: "100%",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <div>
+                <Typography variant="subtitle2" gutterBottom>
+                  Selected products
+                </Typography>
+                <Typography variant="body1">
+                  {activeStep >= 2 ? "$144.97" : "$134.98"}
+                </Typography>
+              </div>
+              <InfoMobile
+                totalPrice={activeStep >= 2 ? "$144.97" : "$134.98"}
+              />
+            </CardContent>
+          </Card>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              flexGrow: 1,
+              width: "100%",
+              maxWidth: { sm: "100%", md: "100%" },
+              minHeight: "790px",
+              gap: { xs: 5, md: "none" },
+            }}
+          >
+            <Stepper
+              id="mobile-stepper"
+              activeStep={activeStep}
+              alternativeLabel
+              sx={{ display: { sm: "flex", md: "none" } }}
+            >
               {steps.map((label) => (
-                <Step key={label}>
-                  <StepLabel>{label}</StepLabel>
+                <Step
+                  sx={{
+                    ":first-child": { pl: 0 },
+                    ":last-child": { pr: 0 },
+                    "& .MuiStepConnector-root": { top: { xs: 6, sm: 12 } },
+                  }}
+                  key={label}
+                >
+                  <StepLabel
+                    sx={{
+                      ".MuiStepLabel-labelContainer": { maxWidth: "70px" },
+                    }}
+                  >
+                    {label}
+                  </StepLabel>
                 </Step>
               ))}
             </Stepper>
-
-            <Box sx={{ minHeight: '400px' }}>
-              {renderStepContent(activeStep)}
-            </Box>
-
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mt: 4,
-                pt: 3,
-                borderTop: 1,
-                borderColor: 'divider',
-              }}
-            >
-              <Button
-                disabled={activeStep === 0}
-                onClick={handleBack}
-                startIcon={<ArrowBack />}
-                sx={{ textTransform: 'none' }}
-              >
-                Back
-              </Button>
-
-              <Box sx={{ flex: '1 1 auto' }} />
-
-              {activeStep === steps.length - 1 ? (
+            {activeStep === steps.length ? (
+              <Stack spacing={2} useFlexGap>
+                <Typography variant="h1">📦</Typography>
+                <Typography variant="h5">Thank you for your order!</Typography>
+                <Typography variant="body1" sx={{ color: "text.secondary" }}>
+                  Your order number is
+                  <strong>&nbsp;#140396</strong>. We have emailed your order
+                  confirmation and will update you once its shipped.
+                </Typography>
                 <Button
                   variant="contained"
-                  onClick={handleSubmit}
-                  disabled={isLoading}
-                  endIcon={<Check />}
-                  sx={{
-                    px: 3,
-                    py: 1,
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                  }}
+                  sx={{ alignSelf: "start", width: { xs: "100%", sm: "auto" } }}
                 >
-                  {isLoading ? 'Creating Account...' : 'Create Account'}
+                  Go to my orders
                 </Button>
-              ) : (
-                <Button
-                  variant="contained"
-                  onClick={handleNext}
-                  endIcon={<ArrowForward />}
-                  sx={{
-                    px: 3,
-                    py: 1,
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                  }}
+              </Stack>
+            ) : (
+              <Fragment>
+                {getStepContent(activeStep)}
+                <Box
+                  sx={[
+                    {
+                      display: "flex",
+                      flexDirection: { xs: "column-reverse", sm: "row" },
+                      alignItems: "end",
+                      flexGrow: 1,
+                      gap: 1,
+                      pb: { xs: 12, sm: 0 },
+                      mt: { xs: 2, sm: 0 },
+                      mb: "60px",
+                    },
+                    activeStep !== 0
+                      ? { justifyContent: "space-between" }
+                      : { justifyContent: "flex-end" },
+                  ]}
                 >
-                  Next
-                </Button>
-              )}
-            </Box>
-
-            <Box textAlign="center" mt={3}>
-              <Typography variant="body2" color="text.secondary">
-                Already have an account?{' '}
-                <Link
-                  component="button"
-                  variant="body2"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigate('/sign-in');
-                  }}
-                  fontWeight="medium"
-                >
-                  Sign in here
-                </Link>
-              </Typography>
-            </Box>
-          </CardContent>
-        </Card>
-      </Box>
-    </Container>
+                  {activeStep !== 0 && (
+                    <Button
+                      startIcon={<ChevronLeftRoundedIcon />}
+                      onClick={handleBack}
+                      variant="text"
+                      sx={{ display: { xs: "none", sm: "flex" } }}
+                    >
+                      Previous
+                    </Button>
+                  )}
+                  {activeStep !== 0 && (
+                    <Button
+                      startIcon={<ChevronLeftRoundedIcon />}
+                      onClick={handleBack}
+                      variant="outlined"
+                      fullWidth
+                      sx={{ display: { xs: "flex", sm: "none" } }}
+                    >
+                      Previous
+                    </Button>
+                  )}
+                  <Button
+                    variant="contained"
+                    endIcon={<ChevronRightRoundedIcon />}
+                    onClick={onNext}
+                    sx={{ width: { xs: "100%", sm: "fit-content" } }}
+                  >
+                    {activeStep === steps.length - 1 ? "Create account" : "Next"}
+                  </Button>
+                </Box>
+              </Fragment>
+            )}
+          </Box>
+        </Grid>
+      </Grid>
+    </AppTheme>
   );
 }

@@ -44,7 +44,7 @@ const useTablesStore = create((set, get) => ({
         try {
             set({ loading: true });
             const { employee } = get();
-            let query = supabase.from('tables').select(`*, assign(*)`).order('table_no', { ascending: true });
+            let query = supabase.from('tables').select(`*`).order('table_no', { ascending: true });
 
             if (employee.role === 'waiter') {
                 query = query.or(`assign.eq.${employee.id},status.eq.available`);

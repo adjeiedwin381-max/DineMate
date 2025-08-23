@@ -398,7 +398,7 @@ const handleSaveTable = () => {
                     <Grid item xs={4}>
                       <Button
                         fullWidth
-                        size="small"
+                        size="large"
                         variant={table.status === 'available' ? 'contained' : 'outlined'}
                         color="success"
                         onClick={() => handleStatusChange(table, 'available')}
@@ -410,7 +410,7 @@ const handleSaveTable = () => {
                     <Grid item xs={4}>
                       <Button
                         fullWidth
-                        size="small"
+                        size="large"
                         variant={table.status === 'occupied' ? 'contained' : 'outlined'}
                         color="error"
                         onClick={() => handleStatusChange(table, 'occupied')}
@@ -422,7 +422,7 @@ const handleSaveTable = () => {
                     <Grid item xs={4}>
                       <Button
                         fullWidth
-                        size="small"
+                        size="large"
                         variant={table.status === 'reserved' ? 'contained' : 'outlined'}
                         color="warning"
                         onClick={() => handleStatusChange(table, 'reserved')}

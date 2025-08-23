@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from './supabase';
 import Swal from 'sweetalert2';
+import useAuthStore from './authStore';
 
 const useEmployeesStore = create((set, get) => ({
     employees: [],
@@ -9,14 +10,26 @@ const useEmployeesStore = create((set, get) => ({
     position: '',
     editingRow: null,
     rowData: {},
+    member: {},
+    role: '',
+    username: '',
+
 
     // Fetch employees
-    fetchEmployees: async () => {
+    fetchMembers: async () => {
         set({ loading: true });
         try {
-            const { data, error } = await supabase.from('employees').select('*').order('name', { ascending: true });
+            const { data, error } = await supabase
+                .from('restaurant_members')
+                .select(`*, user:auth_users(*), restaurant(*)`)
+                .eq('user_id', useAuthStore.getState().user.id)
+                .eq('restaurant_id', useAuthStore.getState().restaurant.id)
+                .order('name', { ascending: true });
             if (error) throw error;
-            set({ employees: data });
+
+            console.log(data);
+            console.log(error);
+            set({ members: data });
         } catch (error) {
             Swal.fire('Error', 'Failed to fetch employees. Check your internet connection.', 'error');
         } finally {
@@ -34,13 +47,13 @@ const useEmployeesStore = create((set, get) => ({
 
         try {
             const { data, error } = await supabase
-                .from('employees')
-                .insert([{ name, position, image: '', password: '' }]) // Add default values for image and password
+                .from('restaurant_members')
+                .insert([{ name, position, image: '', password: '', user_id: useAuthStore.getState().user.id, restaurant_id: useAuthStore.getState().restaurant.id }]) // Add default values for image and password
                 .select();
             if (error) throw error;
 
             Swal.fire('Success', 'Employee added successfully!', 'success');
-            set((state) => ({ employees: [...state.employees, ...data], name: '', position: '' }));
+            set((state) => ({ members: [...state.members, ...data], name: '', position: '' }));
         } catch (error) {
             Swal.fire('Error', 'Failed to add employee.', 'error');
         }
@@ -61,7 +74,7 @@ const useEmployeesStore = create((set, get) => ({
                 waiter: "Waiter",
                 bartender: "Bartender",
                 chef: "Chef"
-              },
+            },
             inputAttributes: {
               autocapitalize: "off"
             },  
@@ -79,12 +92,12 @@ const useEmployeesStore = create((set, get) => ({
           if (role) {
             try {
                 const { error } = await supabase
-                    .from('employees')
-                    .update({ role })
+                    .from('restaurant_members')
+                    .update({ role: role })
                     .eq('id', employee.id);
                 if (error) throw error;
 
-                get().fetchEmployees();
+                get().fetchMembers();
                 Swal.fire('Success', 'Employee role updated successfully!', 'success');
             } catch (error) {
                 Swal.fire('Error', 'Failed to update employee role.', 'error');
@@ -93,10 +106,10 @@ const useEmployeesStore = create((set, get) => ({
     },
 
     // Update user status
-    handleUpdateStatus: async (employee) => {
-        if (employee.status === 'active') {
+    handleUpdateStatus: async (member) => {
+        if (member.status === 'active') {
             Swal.fire({
-                title: `Are you sure you want to deactivate ${employee.name}?`,
+                title: `Are you sure you want to deactivate ${member.name}?`,
                 icon: "warning",
                 showCancelButton: true,
                 confirmButtonColor: "#3085d6",
@@ -105,16 +118,16 @@ const useEmployeesStore = create((set, get) => ({
           }).then(async (result) => {
             if (result.isConfirmed) {
                 const { error } = await supabase
-                    .from('employees')
+                    .from('restaurant_members')
                     .update({ status: 'inactive' })
-                    .eq('id', employee.id);
+                    .eq('id', member.id);
                 if (error) throw error;
     
-                get().fetchEmployees();
+                get().fetchMembers();
                 
                 Swal.fire({
                   title: "Deactivated!",
-                  text: `${employee.name} has been deactivated.`,
+                  text: `${member.name} has been deactivated.`,
                   icon: "success",
                   showConfirmButton: false,
                   timer: 1500
@@ -123,18 +136,18 @@ const useEmployeesStore = create((set, get) => ({
           });
         }
 
-        if (employee.status === 'inactive') {
+        if (member.status === 'inactive') {
             const { error } = await supabase
-                .from('employees')
+                .from('restaurant_members')
                 .update({ status: 'active' })
-                .eq('id', employee.id);
+                .eq('id', member.id);
             if (error) throw error;
 
-            get().fetchEmployees();
+            get().fetchMembers();
             
             Swal.fire({
               title: "Activated!",
-              text: `${employee.name} has been activated.`,
+              text: `${member.name} has been activated.`,
               icon: "success",
               showConfirmButton: false,
               timer: 1500
@@ -157,7 +170,7 @@ const useEmployeesStore = create((set, get) => ({
         const { rowData } = get();
         try {
             const { error } = await supabase
-                .from('employees')
+                .from('restaurant_members')
                 .update({
                     name: rowData.name,
                     status: rowData.status,

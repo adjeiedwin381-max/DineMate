@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from './supabase';
 import { handleError } from '../components/Error';
+import useAuthStore from './authStore';
 
 // Create the menu store with zustand
 const useDashboardStore = create((set, get) => ({
@@ -44,13 +45,14 @@ const useDashboardStore = create((set, get) => ({
         set({ openAvailable: false });
     },
 
-    fetchUser: ()=> {
-        const fetched_user = JSON.parse(localStorage.getItem('employee'))[0];
-        set({ user: fetched_user });
+    fetchUser: () => {
+        const { user } = useAuthStore.getState();
+        if (user) return;
+        set({ user: user });
     },
 
     fetchOrders: async ()=> {
-        const { user } = get(); // Access the user from the state
+        const { user } = useAuthStore.getState(); // Access the user from the state
 
         if (!user) {
             console.error("User is not set. Please call fetchUser first.");
@@ -83,7 +85,7 @@ const useDashboardStore = create((set, get) => ({
     },
 
     fetchSalesData: async ()=> {
-        const { user } = get(); // Access the user from the state
+        const { user } = useAuthStore.getState(); // Access the user from the state
 
         if (!user) {
             console.error("User is not set. Please call fetchUser first.");
