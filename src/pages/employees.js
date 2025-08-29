@@ -14,18 +14,25 @@ import {
   Card,
   CardContent,
   CardActions,
+  Divider,
   ToggleButtonGroup,
   ToggleButton,
   Grid,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import AddIcon from "@mui/icons-material/Add";
+import Swal from "sweetalert2";
+import { supabaseAdmin } from "../lib/supabaseAdmin";
+import { supabase } from "../lib/supabase";
+import useRestaurantStore from "../lib/restaurantStore";
 
 const EmployeeManagement = () => {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [viewMode, setViewMode] = useState("table"); // "table" or "card"
+  const { selectedRestaurant } = useRestaurantStore();
 
   const employees = [
     {
@@ -111,6 +118,79 @@ const EmployeeManagement = () => {
     },
   ];
 
+  const handleAddEmployee = async (restaurantId) => {
+    Swal.fire({
+      title: "Invite New Employee",
+      html: `
+        <input id="swal-email" class="swal2-input" placeholder="Email" type="email" />
+        <input id="swal-firstname" class="swal2-input" placeholder="First Name" />
+        <input id="swal-lastname" class="swal2-input" placeholder="Last Name" />
+        <select id="swal-role" class="swal2-input" style="margin-top: 10px;">
+          <option value="">Select Role</option>
+          <option value="admin">Admin</option>
+          <option value="chef">Chef</option>
+          <option value="waiter">Waiter</option>
+          <option value="bartender">Bartender</option>
+          <option value="cashier">Cashier</option>
+        </select>
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: "Send Invite",
+      showLoaderOnConfirm: true,
+      preConfirm: async () => {
+        const email = document.getElementById("swal-email").value.trim();
+        const firstName = document.getElementById("swal-firstname").value.trim();
+        const lastName = document.getElementById("swal-lastname").value.trim();
+        const role = document.getElementById("swal-role").value;
+
+        if (!email || !firstName || !lastName || !role) {
+          Swal.showValidationMessage("⚠️ All fields are required.");
+          return false;
+        }
+
+        try {
+          
+          // Step 1: Send Invite
+          const { data, error } =
+          await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+            data: { firstName, lastName, role },
+            redirectTo: "http://localhost:3000/#/onboarding",
+          });
+          
+          if (error) throw new Error(error.message);
+          
+          const selectedRestaurantId = selectedRestaurant.restaurants.id;
+          const userId = data.user.id;
+
+          // Step 2: Insert into restaurant_members
+          const { error: memberError } = await supabase
+            .from("restaurant_members")
+            .insert({
+              restaurant_id: selectedRestaurantId,
+              user_id: userId,
+              role,
+            });
+
+          if (memberError) throw new Error(memberError.message);
+
+          return data;
+        } catch (err) {
+          Swal.showValidationMessage(`❌ Request failed: ${err.message}`);
+          console.error("Invite error:", err);
+        }
+      },
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire({
+          icon: "success",
+          title: "✅ Invite Sent!",
+          // text: `An invite has been sent to ${result.value.user.email}`,
+        });
+      }
+    });
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       {/* Header */}
@@ -126,6 +206,7 @@ const EmployeeManagement = () => {
           Employee Management
         </Typography>
 
+
         {/* View Toggle */}
         <ToggleButtonGroup
           value={viewMode}
@@ -138,6 +219,18 @@ const EmployeeManagement = () => {
         </ToggleButtonGroup>
       </Box>
 
+      <Button
+        variant="contained"
+        color="primary"
+        startIcon={<AddIcon />}
+        sx={{ mb: 4 }}
+        size="large"
+        onClick={handleAddEmployee}
+      >
+        Add Employee
+      </Button>
+      <Divider sx={{ mb: 4 }} />
+      
       {/* Conditional UI */}
       {viewMode === "table" ? (
         <DataGrid
@@ -158,9 +251,10 @@ const EmployeeManagement = () => {
               <Card
                 sx={{
                   borderRadius: 3,
-                  boxShadow: 4,
+                  border: "1px solid #ddd",
+                  // boxShadow: 4,
                   display: "flex",
-                  height: 280, // taller card
+                  height: 200, // taller card
                   overflow: "hidden",
                 }}
               >

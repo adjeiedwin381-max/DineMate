@@ -40,6 +40,8 @@ const useRestaurantStore = create(
                         .eq('restaurant_id', id)
                         .single();
                     if (error) throw error;
+
+                    console.log("restaurant", data);
     
                     set({ selectedRestaurant: data });
                 } catch (error) {

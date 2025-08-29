@@ -26,6 +26,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import SettingsIcon from "@mui/icons-material/Settings";
+import CachedIcon from "@mui/icons-material/Cached";
 
 import { MainListItems, SecondaryListItems } from './listItems';
 import Tooltip from '@mui/material/Tooltip';
@@ -176,6 +177,8 @@ const Layout = () => {
     signOut();
 
     localStorage.clear();
+    localStorage.removeItem("auth-store");
+    localStorage.removeItem("restaurant-store");
     setSelectedRestaurant(null);
     navigate('/sign-in');
   };
@@ -193,21 +196,6 @@ const Layout = () => {
 
   return (
     <>
-      {restaurants.length > 0 && !selectedRestaurant && <RestaurantGrid />}
-
-      {restaurants.length === 0 && (
-        <Box sx={{ display: "flex", height: "100vh", width: "100vw" }}>
-          <Typography
-            variant="h5"
-            color="inherit"
-            sx={{ fontWeight: "900" }}
-            noWrap
-          >
-            No restaurants found
-          </Typography>
-        </Box>
-      )}
-
       {selectedRestaurant && (
         <ThemeProvider theme={mdTheme}>
           <Box sx={{ display: "flex", height: "100vh", width: "100vw" }}>
@@ -259,39 +247,45 @@ const Layout = () => {
                     </Typography>
                   </Box>
 
-                  <IconButton
-                    size="large"
-                    aria-label="show 17 new notifications"
-                    color="inherit"
-                    onClick={handleClick}
-                  >
-                    <Badge badgeContent={17} color="error">
-                      <NotificationsIcon />
-                    </Badge>
-                  </IconButton>
-                  <Popover
-                    id={id}
-                    open={openNotification}
-                    anchorEl={anchorEl}
-                    onClose={handleClose}
-                    anchorOrigin={{
-                      vertical: "bottom",
-                      horizontal: "left",
-                    }}
-                  >
-                    <Typography sx={{ p: 2 }}>
-                      The content of the Popover.The content of the Popover.
-                    </Typography>
-                  </Popover>
+                  <Tooltip title="Switch Restaurant">
+                    <IconButton
+                      size="large"
+                      aria-label="show 17 new notifications"
+                      color="inherit"
+                      onClick={()=> navigate('/restaurant-selection')}
+                    >
+                      <CachedIcon />
+                    </IconButton>
+                  </Tooltip>
 
-                  <Typography
-                    variant="subtitle1"
-                    color="inherit"
-                    sx={{ fontWeight: "900" }}
-                    noWrap
-                  >
-                    {first_name + " " + last_name}
-                  </Typography>
+                  <Tooltip title="Notifications">
+                    <IconButton
+                      size="large"
+                      aria-label="show 17 new notifications"
+                      color="inherit"
+                      onClick={handleClick}
+                    >
+                      <Badge badgeContent={17} color="error">
+                        <NotificationsIcon />
+                      </Badge>
+                    </IconButton>
+                    <Popover
+                      id={id}
+                      open={openNotification}
+                      anchorEl={anchorEl}
+                      onClose={handleClose}
+                      anchorOrigin={{
+                        vertical: "bottom",
+                        horizontal: "left",
+                      }}
+                    >
+                      <Typography sx={{ p: 2 }}>
+                        The content of the Popover.The content of the Popover.
+                      </Typography>
+                    </Popover>
+                  </Tooltip>
+
+                  
 
                   <IconButton color="inherit">
                     <Box sx={{ flexGrow: 0 }}>
@@ -313,6 +307,17 @@ const Layout = () => {
                         open={Boolean(anchorElUser)}
                         onClose={handleCloseUserMenu}
                       >
+                        <MenuItem disabled>
+                          <Typography
+                            variant="title"
+                            color="inherit"
+                            sx={{ fontWeight: "900" }}
+                            noWrap
+                          >
+                            {first_name + " " + last_name}
+                          </Typography>
+                        </MenuItem>
+                        <Divider/>
                         <MenuItem
                           onClick={() => {
                             handleCloseUserMenu();
@@ -332,16 +337,18 @@ const Layout = () => {
                           <PersonIcon sx={{ mr: 1 }} />
                           <Typography textAlign="center">Profile</Typography>
                         </MenuItem>
-                        {selectedRestaurant.role === "owner" && (<MenuItem
-                          onClick={() => {
-                            handleCloseUserMenu();
-                            navigate("settings");
-                            setBreadcrumb("Settings");
-                          }}
-                        >
-                          <SettingsIcon sx={{ mr: 1 }} />
-                          <Typography textAlign="center">Settings</Typography>
-                        </MenuItem>)}
+                        {selectedRestaurant.role === "owner" && (
+                          <MenuItem
+                            onClick={() => {
+                              handleCloseUserMenu();
+                              navigate("settings");
+                              setBreadcrumb("Settings");
+                            }}
+                          >
+                            <SettingsIcon sx={{ mr: 1 }} />
+                            <Typography textAlign="center">Settings</Typography>
+                          </MenuItem>
+                        )}
                         <Divider component="li" />
                         <MenuItem onClick={logout}>
                           <LogoutIcon sx={{ mr: 1 }} />
@@ -376,7 +383,7 @@ const Layout = () => {
             <Box
               component="main"
               sx={{
-                backgroundColor: "#fff",
+                backgroundColor: "#f5f6fa",
                 flexGrow: 1,
                 overflow: "auto",
               }}
