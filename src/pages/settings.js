@@ -64,7 +64,6 @@ const Settings = () => {
           bgcolor: "background.paper",
           display: "flex",
           p: 9,
-          height: "70vh",
         }}
       >
         <Tabs

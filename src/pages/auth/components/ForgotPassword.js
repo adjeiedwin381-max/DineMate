@@ -7,6 +7,8 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import OutlinedInput from '@mui/material/OutlinedInput';
+import { supabase } from '../../../lib/supabase';
+import Swal from 'sweetalert2';
 
 function ForgotPassword({ open, handleClose }) {
   return (
@@ -16,9 +18,33 @@ function ForgotPassword({ open, handleClose }) {
       slotProps={{
         paper: {
           component: 'form',
-          onSubmit: (event) => {
+          onSubmit: async (event) => {
             event.preventDefault();
+            const email = event.target.email.value;
+
+            let { error } = await supabase.auth.resetPasswordForEmail(email, {
+              redirectTo: "http://localhost:3000/#/reset-password",
+            });
+
+            if (error) {
+              Swal.fire({
+                title: 'Error',
+                text: error.message,
+                icon: 'error',
+              });
+
+              console.error(error);
+
+              return;
+            }
+
             handleClose();
+
+            Swal.fire({
+              title: 'Success',
+              text: 'Check your email for a link to reset your password.',
+              icon: 'success',
+            });
           },
           sx: { backgroundImage: 'none' },
         },

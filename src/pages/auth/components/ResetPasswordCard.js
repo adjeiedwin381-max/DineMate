@@ -36,20 +36,21 @@ const Card = styled(MuiCard)(({ theme }) => ({
   }),
 }));
 
-export default function SignInCard() {
+export default function ResetPasswordCard() {
   const {
-    signIn,
-    validateInputs,
+    user,
+    validateConfirmPassword,
     email,
     password,
-    emailError,
-    emailErrorMessage,
     passwordError,
     passwordErrorMessage,
-    setEmail,
+    confirmPassword,
+    confirmPasswordError,
+    confirmPasswordErrorMessage,
+    setConfirmPassword,
     setPassword,
     setProcessing,
-    processing
+    resetPassword,
   } = useAuthStore();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -66,9 +67,9 @@ export default function SignInCard() {
     try {
       setProcessing(true);
 
-      if (!validateInputs(email, password)) return;
+      if (!validateConfirmPassword(password, confirmPassword)) return;
 
-      const data = await signIn(email, password);
+      const data = await resetPassword(user.email, password);
 
       if (data) {
         navigate("/app/dashboard", { replace: true });
@@ -90,56 +91,18 @@ export default function SignInCard() {
         variant="h4"
         sx={{ width: '100%', fontSize: 'clamp(2rem, 10vw, 2.15rem)' }}
       >
-        Sign in
+        Reset Password
       </Typography>
       <Box
         sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 2 }}
       >
         <FormControl>
-          <FormLabel htmlFor="email">Email</FormLabel>
+          <FormLabel htmlFor="password">New Password</FormLabel>
           <TextField
-            error={emailError || emailErrorMessage}
-            helperText={emailErrorMessage}
-            id="email"
-            type="email"
-            name="email"
-            placeholder="your@email.com"
-            autoComplete="email"
-            autoFocus
-            required
-            fullWidth
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            variant="outlined"
-            color={emailError ? 'error' : 'primary'}
-          />
-          {emailError && (
-            <FormHelperText error>
-              {emailErrorMessage}
-            </FormHelperText>
-          )}
-        </FormControl>
-        <FormControl>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <FormLabel htmlFor="password">Password</FormLabel>
-            <Link
-              component="button"
-              type="button"
-              onClick={handleClickOpen}
-              variant="body2"
-              sx={{ alignSelf: 'baseline' }}
-            >
-              Forgot your password?
-            </Link>
-          </Box>
-          <TextField
-            error={passwordError || passwordErrorMessage}
-            helperText={passwordErrorMessage}
-            name="password"
-            placeholder="••••••"
-            type="password"
             id="password"
-            autoComplete="current-password"
+            type="text"
+            name="password"
+            autoComplete="password"
             autoFocus
             required
             fullWidth
@@ -154,46 +117,32 @@ export default function SignInCard() {
             </FormHelperText>
           )}
         </FormControl>
-        <FormControlLabel
-          control={<Checkbox value="remember" color="primary" />}
-          label="Remember me"
-        />
-        <ForgotPassword open={open} handleClose={handleClose} />
+        <FormControl>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <FormLabel htmlFor="confirmPassword">Confirm Password</FormLabel>
+          </Box>
+          <TextField
+            name="confirmPassword"
+            type="text"
+            id="confirmPassword"
+            autoComplete="confirm-password"
+            required
+            fullWidth
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            variant="outlined"
+            color={confirmPasswordError ? 'error' : 'primary'}
+          />
+          {confirmPasswordError && (
+            <FormHelperText error>
+              {confirmPasswordErrorMessage}
+            </FormHelperText>
+          )}
+        </FormControl>
         <Button type="submit" fullWidth variant="contained" onClick={handleSubmit}>
-          Sign in
+          Reset Password
         </Button>
-        <Typography sx={{ textAlign: 'center' }}>
-          Don&apos;t have an account?{' '}
-          <span>
-            <Link
-              href="/#/sign-up"
-              variant="body2"
-              sx={{ alignSelf: 'center' }}
-            >
-              Sign up
-            </Link>
-          </span>
-        </Typography>
       </Box>
-      {/* <Divider>or</Divider>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <Button
-          fullWidth
-          variant="outlined"
-          onClick={() => alert('Sign in with Google')}
-          startIcon={<GoogleIcon />}
-        >
-          Sign in with Google
-        </Button>
-        <Button
-          fullWidth
-          variant="outlined"
-          onClick={() => alert('Sign in with Facebook')}
-          startIcon={<FacebookIcon />}
-        >
-          Sign in with Facebook
-        </Button>
-      </Box> */}
     </Card>
   );
 }

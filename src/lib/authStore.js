@@ -7,6 +7,7 @@ import PaymentForm from "../pages/auth/components/PaymentForm";
 import RestaurantForm from "../pages/auth/components/RestaurantForm";
 import Review from "../pages/auth/components/Review";
 import PersonalInformationForm from "../pages/auth/components/PersonalInformationForm";
+import useRestaurantStore from "./restaurantStore";
 
 const useAuthStore = create(
   persist(
@@ -80,6 +81,7 @@ const useAuthStore = create(
       validationErrors: {},
       email: "",
       password: "",
+      confirmPassword: "",
       emailError: false,
       emailErrorMessage: "",
       passwordError: false,
@@ -114,11 +116,41 @@ const useAuthStore = create(
 
       setEmail: (value) => set({ email: value }),
       setPassword: (value) => set({ password: value }),
+      setConfirmPassword: (value) => set({ confirmPassword: value }),
 
       setEmailError: (value) => set({ emailError: value }),
       setEmailErrorMessage: (value) => set({ emailErrorMessage: value }),
       setPasswordError: (value) => set({ passwordError: value }),
       setPasswordErrorMessage: (value) => set({ passwordErrorMessage: value }),
+      setConfirmPasswordError: (value) => set({ confirmPasswordError: value }),
+      setConfirmPasswordErrorMessage: (value) => set({ confirmPasswordErrorMessage: value }),
+
+      setLoading: (value) => set({ loading: value }),
+
+      resetPassword: async (email, password) => {
+        const { data, error } = await supabase.auth.updateUser({
+          email,
+          password,
+        })
+
+        if (error) {
+          console.error(error);
+
+          Swal.fire({
+            title: 'Error',
+            text: error.message,
+            icon: 'error',
+          });
+
+          return null;
+        }
+        
+        return data;
+      },
+
+      // setOnboardingPassword: (password) => { 
+
+      // },
 
       // --- Validation logic
       validateInputs: (email, password) => {
@@ -143,6 +175,28 @@ const useAuthStore = create(
           isValid = false;
         } else {
           set({ passwordError: false, passwordErrorMessage: "" });
+        }
+
+        return isValid;
+      },
+
+      validateConfirmPassword: (password, confirmPassword) => {
+        let isValid = true;
+
+        if (password.length < 6) {
+          set({
+            passwordError: true,
+            passwordErrorMessage: "Password must be at least 6 characters long.",
+          });
+          isValid = false;
+        } else if (password !== confirmPassword) {
+          set({
+            confirmPasswordError: true,
+            confirmPasswordErrorMessage: "Passwords do not match.",
+          });
+          isValid = false;
+        } else {
+          set({ confirmPasswordError: false, confirmPasswordErrorMessage: "" });
         }
 
         return isValid;
@@ -357,8 +411,7 @@ const useAuthStore = create(
       setUsername: (username) => set({ username }),
       setPassword: (password) => set({ password }),
       setRole: (role) => set({ role }),
-      setSelectedEmployee: (employee) =>
-        set({ selectedEmployee: employee, username: employee?.name || "" }),
+      setSelectedEmployee: (employee) => set({ selectedEmployee: employee, username: employee?.name || "" }),
 
       // ✅ Fetch current session
       fetchUser: async () => {
@@ -418,7 +471,9 @@ const useAuthStore = create(
       // ✅ Sign out
       signOut: async () => {
         await supabase.auth.signOut();
-        set({ user: null, session: null });
+        set({ user: null, session: null, });
+        useRestaurantStore.persist.clearStorage();
+        useAuthStore.persist.clearStorage();
       },
 
       // Fetch employees

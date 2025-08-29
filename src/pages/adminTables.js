@@ -1,237 +1,384 @@
-import Box from '@mui/material/Box';
-import { useEffect } from "react";
-import { 
-    Grid, 
-    Button, 
-    Stack, 
-    TextField, 
-    FormControl, 
-    Modal, 
-    Fade, 
-    Backdrop, 
-    InputLabel, 
-    Select, 
-    MenuItem, 
-    LinearProgress,
-    Typography
-} from '@mui/material';
-import TableCard from '../components/TableCard';
-import useAdminTablesStore from '../lib/adminTablesStore';
-import { format } from 'date-fns';
+import React, { useState } from "react";
+import {
+  Box,
+  Grid,
+  Typography,
+  ToggleButton,
+  ToggleButtonGroup,
+  Card,
+  CardContent,
+  Chip,
+  Button,
+  Avatar,
+  Modal,
+  Fade,
+  Backdrop,
+  Stack,
+  Paper,
+} from "@mui/material";
+import {
+  TableRestaurant,
+  EventSeat,
+  LocalDining,
+  LockClock,
+  CheckCircle,
+  Cancel,
+} from "@mui/icons-material";
+import ColorModeSelect from "./auth/components/shared-theme/AppTheme";
 
-const style = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: '90%',
-  maxWidth: '800px',
-  bgcolor: 'background.paper',
-  border: '2px solid #000',
-  boxShadow: 24,
-  p: 4,
+const dummyTables = [
+  { id: 1, name: "Table 1", status: "available", seats: 4 },
+  { id: 2, name: "Table 2", status: "occupied", seats: 2, waiter: "John" },
+  { id: 3, name: "Table 3", status: "reserved", seats: 6 },
+  { id: 4, name: "Table 4", status: "occupied", seats: 4, waiter: "Mary" },
+  { id: 5, name: "Table 5", status: "available", seats: 8 },
+  { id: 6, name: "Table 6", status: "reserved", seats: 2 },
+  { id: 7, name: "Table 7", status: "available", seats: 4 },
+  { id: 8, name: "Table 8", status: "occupied", seats: 6, waiter: "Sam" },
+];
+
+const dummyOrders = {
+  2: {
+    id: "ORD-1001",
+    waiter: "John",
+    created_at: "2025-08-23T14:35:00Z",
+    items: [
+      { id: 1, name: "Cheeseburger", price: 12, qty: 2 },
+      { id: 2, name: "Coke", price: 3, qty: 2 },
+    ],
+  },
+  4: {
+    id: "ORD-1002",
+    waiter: "Mary",
+    created_at: "2025-08-23T15:00:00Z",
+    items: [
+      { id: 1, name: "Pizza", price: 15, qty: 1 },
+      { id: 2, name: "Beer", price: 5, qty: 3 },
+    ],
+  },
+  8: {
+    id: "ORD-1003",
+    waiter: "Sam",
+    created_at: "2025-08-23T15:20:00Z",
+    items: [{ id: 1, name: "Cocktail", price: 10, qty: 2 }],
+  },
 };
 
-const AdminTables = () => {
-    const {
-        tables,
-        loading,
-        table_no,
-        getTables,
-        handleAddTable,
-        handleAssign,
-        openAvailable,
-        open,
-        handleAssignAdmin,
-        handleResetTable,
-        handleOpenOccupied,
-        handleClose,
-        handleCloseAvailable,
-        employee,
-        getEmployee,
-        getEmployees,
-        employees,
-        selectedTable,
-        itemsLoading,
-        assignEmployee,
-        items,
-        order,
-        totalQty,
-        totalPrice,
-    } = useAdminTablesStore();
+const statusConfig = {
+  available: { color: "success", icon: <EventSeat />, label: "Available" },
+  occupied: { color: "warning", icon: <LocalDining />, label: "Occupied" },
+  reserved: { color: "info", icon: <LockClock />, label: "Reserved" },
+};
 
-    useEffect(() => {
-        getEmployee();
-        getEmployees();
-        getTables();
-    }, [getTables, getEmployees, getEmployee]);
+export default function TablesDashboard() {
+  const [tableStatus, setTableStatus] = useState("all");
+  const [selectedTable, setSelectedTable] = useState(null);
 
-    function formatDateTime(isoString) {
-        const date = new Date(isoString);
-        return format(date, "EEE dd MMM yy, hh:mm a").toUpperCase();;
-    }
+  const filteredTables =
+    tableStatus === "all"
+      ? dummyTables
+      : dummyTables.filter((t) => t.status === tableStatus);
 
-    return (
-        <>
-            <Box className="my-2 bg-white p-4 rounded-lg shadow-md" sx={{ borderRadius: '4px', marginBottom: 3 }}>
-                <Stack direction="row" spacing={2}  >
-                    <TextField
-                        size="large"
-                        value={table_no}
-                        onChange={(e) => useAdminTablesStore.setState({ table_no: e.target.value })}
-                        label="Table Number"
-                        variant="outlined"
+  const handleOpenTable = (table) => {
+    setSelectedTable(table);
+  };
+
+  const handleClose = () => setSelectedTable(null);
+
+  // Summary counts
+  const total = dummyTables.length;
+  const available = dummyTables.filter((t) => t.status === "available").length;
+  const occupied = dummyTables.filter((t) => t.status === "occupied").length;
+  const reserved = dummyTables.filter((t) => t.status === "reserved").length;
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h5" fontWeight="bold" gutterBottom>
+        🍽️ Table Management
+      </Typography>
+
+      {/* Summary Bar */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper
+            sx={{
+              p: 2,
+              display: "flex",
+              alignItems: "center",
+              borderRadius: 3,
+              border: "1px solid #ddd",
+            }}
+          >
+            <Avatar sx={{ bgcolor: "primary.main", mr: 2 }}>
+              <TableRestaurant />
+            </Avatar>
+            <Box>
+              <Typography variant="h6">{total}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Total Tables
+              </Typography>
+            </Box>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper
+            sx={{
+              p: 2,
+              display: "flex",
+              alignItems: "center",
+              borderRadius: 3,
+              border: "1px solid #ddd",
+            }}
+          >
+            <Avatar sx={{ bgcolor: "success.main", mr: 2 }}>
+              <EventSeat />
+            </Avatar>
+            <Box>
+              <Typography variant="h6">{available}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Available
+              </Typography>
+            </Box>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper
+            sx={{
+              p: 2,
+              display: "flex",
+              alignItems: "center",
+              borderRadius: 3,
+              border: "1px solid #ddd",
+            }}
+          >
+            <Avatar sx={{ bgcolor: "warning.main", mr: 2 }}>
+              <LocalDining />
+            </Avatar>
+            <Box>
+              <Typography variant="h6">{occupied}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Occupied
+              </Typography>
+            </Box>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Paper
+            sx={{
+              p: 2,
+              display: "flex",
+              alignItems: "center",
+              borderRadius: 3,
+              border: "1px solid #ddd",
+            }}
+          >
+            <Avatar sx={{ bgcolor: "info.main", mr: 2 }}>
+              <LockClock />
+            </Avatar>
+            <Box>
+              <Typography variant="h6">{reserved}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Reserved
+              </Typography>
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
+
+      {/* Filters */}
+      <Box sx={{ mb: 3 }}>
+        
+        <ToggleButtonGroup
+          value={tableStatus}
+          exclusive
+          onChange={(_, value) => value && setTableStatus(value)}
+          sx={{
+            "& .MuiToggleButton-root": {
+              px: 4,
+              py: 1.5,
+              fontWeight: 600,
+              borderRadius: 2,
+              border: "1px solid #ddd",
+              textTransform: "capitalize",
+            },
+          }}
+        >
+          <ToggleButton value="all">All</ToggleButton>
+          <ToggleButton value="available">Available</ToggleButton>
+          <ToggleButton value="occupied">Occupied</ToggleButton>
+          <ToggleButton value="reserved">Reserved</ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
+
+      {/* Tables Grid - 4 columns */}
+      <Grid container spacing={3}>
+        {filteredTables.map((table) => {
+          const status = statusConfig[table.status];
+          return (
+            <Grid item xs={12} sm={6} md={3} key={table.id}>
+              <Card
+                sx={{
+                  display: "flex",
+                  border: "1px solid #ddd",
+                  borderRadius: 3,
+                  overflow: "hidden",
+                  cursor: "pointer",
+                  "&:hover": {
+                    borderColor: "primary.main",
+                    bgcolor: "grey.50",
+                  },
+                }}
+                onClick={() => handleOpenTable(table)}
+              >
+                {/* Left side avatar / icon */}
+                <Box
+                  sx={{
+                    width: 100,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    bgcolor: `${status.color}.light`,
+                  }}
+                >
+                  <Avatar
+                    sx={{
+                      bgcolor: `${status.color}.main`,
+                      width: 60,
+                      height: 60,
+                    }}
+                  >
+                    {status.icon}
+                  </Avatar>
+                </Box>
+
+                {/* Right side content */}
+                <CardContent sx={{ flex: 1 }}>
+                  <Stack spacing={1}>
+                    <Typography variant="h6" fontWeight="bold">
+                      {table.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Seats: {table.seats}
+                    </Typography>
+                    <Chip
+                      label={status.label}
+                      color={status.color}
+                      size="small"
+                      sx={{ width: "fit-content" }}
                     />
-                    <Button variant="contained" sx={{ whiteSpace: 'nowrap' }} onClick={handleAddTable} >
-                        Add New Table
-                    </Button>
-                </Stack>
-            </Box>
+                    {table.waiter && (
+                      <Typography
+                        variant="caption"
+                        sx={{ fontStyle: "italic", color: "text.secondary" }}
+                      >
+                        Waiter: {table.waiter}
+                      </Typography>
+                    )}
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+          );
+        })}
+      </Grid>
 
-            <Box
-                className="my-2 bg-white p-4 rounded-lg shadow-md"
-            >
-                {loading ? (
-                    <LinearProgress />
-                ) : (
-                    <>
-                        <Grid container spacing={3}>
-                            {tables?.map((table, i) => (
-                                <Grid item xs={12} sm={6} md={3} lg={3} key={i}>
-                                    <TableCard table={table} handleAssign={() => handleAssign(table, employee)} handleOpenOccupied={() => handleOpenOccupied(table, employee)} isAdmin={true} />
-                                </Grid>
-                            ))}
-                        </Grid>
-                    </>
-                )}
-            </Box>
-
-            {/* Modal for available */}
-            {openAvailable && (
-                <Modal
-                aria-labelledby="transition-modal-title"
-                aria-describedby="transition-modal-description"
-                open={openAvailable}
-                onClose={handleCloseAvailable}
-                closeAfterTransition
-                slots={{ backdrop: Backdrop }}
-                slotProps={{
-                    backdrop: {
-                    timeout: 500,
-                    },
-                }}
+      {/* Modal for Table Orders */}
+      <Modal
+        open={!!selectedTable}
+        onClose={handleClose}
+        closeAfterTransition
+        slots={{ backdrop: Backdrop }}
+        slotProps={{ backdrop: { timeout: 500 } }}
+      >
+        <Fade in={!!selectedTable}>
+          <Box
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              bgcolor: "background.paper",
+              p: 4,
+              borderRadius: 3,
+              width: "90%",
+              maxWidth: 600,
+            }}
+          >
+            {selectedTable && dummyOrders[selectedTable.id] ? (
+              <>
+                <Typography variant="h6" gutterBottom>
+                  Order: {dummyOrders[selectedTable.id].id}
+                </Typography>
+                <Typography variant="body2" gutterBottom>
+                  Waiter: {dummyOrders[selectedTable.id].waiter}
+                </Typography>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    marginTop: "1rem",
+                  }}
                 >
-                <Fade in={openAvailable}>
-                    <Box sx={style}>
-                    <FormControl fullWidth>
-                        <InputLabel id="assign-waiter-label">Assign Waiter</InputLabel>
-                        <Select
-                            labelId="assign-waiter-label"
-                            id="assign-waiter"
-                            value={assignEmployee}
-                            label="Assign Waiter"
-                            onChange={handleAssignAdmin}
-                        >
-                        {employees?.map((employee) => (
-                            <MenuItem key={employee.id} value={employee.id}>{employee.name}</MenuItem>
-                        ))}
-                        </Select>
-                    </FormControl>
-                    </Box>
-                </Fade>
-                </Modal>
+                  <thead>
+                    <tr style={{ background: "#f0f0f0" }}>
+                      <th style={{ padding: "8px", textAlign: "left" }}>
+                        Item
+                      </th>
+                      <th style={{ padding: "8px" }}>Qty</th>
+                      <th style={{ padding: "8px" }}>Price</th>
+                      <th style={{ padding: "8px" }}>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dummyOrders[selectedTable.id].items.map((item) => (
+                      <tr key={item.id}>
+                        <td style={{ padding: "8px" }}>{item.name}</td>
+                        <td style={{ padding: "8px", textAlign: "center" }}>
+                          {item.qty}
+                        </td>
+                        <td style={{ padding: "8px" }}>${item.price}</td>
+                        <td style={{ padding: "8px" }}>
+                          ${item.price * item.qty}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <Box sx={{ mt: 2, textAlign: "right" }}>
+                  <Typography fontWeight="bold">
+                    Total: $
+                    {dummyOrders[selectedTable.id].items.reduce(
+                      (acc, i) => acc + i.price * i.qty,
+                      0
+                    )}
+                  </Typography>
+                </Box>
+                <Box sx={{ mt: 3, display: "flex", gap: 2 }}>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    startIcon={<CheckCircle />}
+                  >
+                    Close Table
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<Cancel />}
+                    onClick={handleClose}
+                  >
+                    Cancel
+                  </Button>
+                </Box>
+              </>
+            ) : (
+              <Typography align="center" fontWeight="bold">
+                No active orders for this table.
+              </Typography>
             )}
-
-            {/* Modal for occupied */}
-            {open && (
-                <Modal
-                aria-labelledby="transition-modal-title"
-                aria-describedby="transition-modal-description"
-                open={open}
-                onClose={handleClose}
-                closeAfterTransition
-                slots={{ backdrop: Backdrop }}
-                slotProps={{
-                    backdrop: {
-                    timeout: 500,
-                    },
-                }}
-                sx={{ minWidth: 950 }}
-                >
-                <Fade in={open}>
-                    <Box sx={style}>
-                    { itemsLoading ? 
-                        <LinearProgress /> 
-                        : 
-                        (
-                        <span>
-                            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between' }}>
-                                <Typography variant="title">
-                                    ORDER NO. {order?.id}
-                                </Typography>
-                                <Typography variant="title">
-                                    SERVED BY {order?.waiter?.name}
-                                </Typography>
-                                <Typography variant="body1">
-                                    ORDERED AT {formatDateTime(order?.created_at)}
-                                </Typography>
-                            </Box>
-                            {items.length > 0 ? (
-                            <div className="table-responsive" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                                <table className="table table-striped">
-                                <thead className="table-dark">
-                                    <tr>
-                                    <th>#</th>
-                                    <th>Product</th>
-                                    <th>Price</th>
-                                    <th>Qty</th>
-                                    <th>Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {items?.map((item, index) => (
-                                    <tr key={index}>
-                                        <td>{index + 1}</td>
-                                        {item?.menuItems ? (
-                                        <>
-                                            <td>{item.menuItems.item_name} {item.menuItems.description}</td>
-                                            <td>&#163; {item.menuItems.price}</td>
-                                            <td>{item.quantity}</td>
-                                            <td>&#163; {item.menuItems.price * item.quantity}</td>
-                                        </>
-                                        ) : (
-                                        <>
-                                            <td>{item.drinks.name.toUpperCase()}</td>
-                                            <td>&#163; {item.drinks.price}</td>
-                                            <td>{item.quantity}</td>
-                                            <td>&#163; {item.total}</td>
-                                        </>
-                                        )}
-                                    </tr>
-                                    ))}
-                                    <tr className="table-dark">
-                                    <td colSpan="3">Total</td>
-                                    <td>{totalQty}</td>
-                                    <td>&#163; {totalPrice.toFixed(2)}</td>
-                                    </tr>
-                                </tbody>
-                                </table>
-                            </div>
-                            ) : (
-                            <div className="text-center">
-                                <p><em><strong>NOTHING ORDERED YET</strong></em></p>
-                                <button className="btn btn-danger" onClick={() => handleResetTable(selectedTable)}>Close Table</button>
-                            </div>
-                            )}
-                        </span>
-                        )
-                    }
-                    </Box>
-                </Fade>
-                </Modal>
-            )}
-        </>
-    );
-};
-
-export default AdminTables;
+          </Box>
+        </Fade>
+      </Modal>
+    </Box>
+  );
+}

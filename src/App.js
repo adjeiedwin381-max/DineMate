@@ -17,6 +17,9 @@ import ProtectedRoute from './pages/auth/components/ProtectedRoute';
 import Settings from './pages/settings';
 import Cashier from './pages/cashier';
 import Bar from './pages/bar';
+import RestaurantGrid from "./pages/restaurantSelectionPage";
+import ResetPassword from './pages/auth/resetPassword';
+import Onboarding from './pages/auth/onboarding';
 
 function App() {
   return (
@@ -27,6 +30,9 @@ function App() {
           <Route path="sign-up" element={<SignUp />} />
           <Route path="sign-in" element={<SignIn />} />
           <Route path="table-management" element={<TableManagement />} />
+          <Route path="restaurant-selection" element={<RestaurantGrid />} />
+          <Route path="reset-password" element={<ResetPassword />} />
+          <Route path="onboarding" element={<Onboarding />} />
         </Route>
         <Route
           path="/app/"
